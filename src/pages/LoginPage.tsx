@@ -1,0 +1,270 @@
+import { useState, type FormEvent } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Shield,
+  Sun,
+  Gem,
+  ShieldCheck,
+} from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
+
+export function LoginPage() {
+  const { user, loading, signIn, signInWithGoogle, isDemoMode } = useAuth()
+  const navigate = useNavigate()
+  const [email, setEmail] = useState(isDemoMode ? 'rahul@sanro.in' : '')
+  const [password, setPassword] = useState(isDemoMode ? 'demo1234' : '')
+  const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(true)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  if (!loading && user) {
+    return <Navigate to="/" replace />
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+    const result = await signIn(email, password)
+    setSubmitting(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    if (remember) {
+      localStorage.setItem('sanro_remember', email)
+    }
+    navigate('/')
+  }
+
+  async function handleGoogleSignIn() {
+    setError('')
+    setGoogleLoading(true)
+    const result = await signInWithGoogle()
+    if (result.error) {
+      setGoogleLoading(false)
+      setError(result.error)
+    }
+    // On success, Supabase redirects to Google — no navigate needed
+  }
+
+  return (
+    <div className="flex min-h-screen bg-surface-muted">
+      <div className="m-auto flex h-[min(920px,100vh)] w-full max-w-[1280px] overflow-hidden bg-white shadow-sm lg:h-[min(860px,94vh)] lg:rounded-2xl lg:border lg:border-border">
+        {/* Left visual panel */}
+        <div className="relative hidden w-[48%] overflow-hidden lg:block">
+          <img
+            src="/logobg.png"
+            alt="Premium fibre glass door"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/35" />
+
+          <div className="absolute right-5 top-5 flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
+            Secure Access
+          </div>
+
+          <div className="relative z-10 flex h-full flex-col px-10 py-10 text-white">
+            <div>
+              <div className="text-2xl font-extrabold tracking-[0.16em]">SANRO</div>
+              <div className="mt-1 text-[11px] font-medium tracking-[0.18em] text-white/80">
+                FIBRE GLASS INDUSTRIES
+              </div>
+              <div className="mt-3 h-0.5 w-10 bg-accent" />
+            </div>
+
+            <div className="mt-auto max-w-md pb-8">
+              <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
+                Strong Doors for a Better Tomorrow.
+              </h1>
+              <p className="mt-3 text-[15px] text-white/80">
+                Premium fibre glass doors for modern spaces.
+              </p>
+
+              <ul className="mt-8 space-y-3 text-sm text-white/90">
+                <li className="flex items-center gap-3">
+                  <Shield className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  Durable
+                </li>
+                <li className="flex items-center gap-3">
+                  <Sun className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  Weather Resistant
+                </li>
+                <li className="flex items-center gap-3">
+                  <Gem className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  Modern Designs
+                </li>
+              </ul>
+
+              <div className="mt-10 flex gap-1.5">
+                <span className="h-1 w-6 rounded-full bg-accent" />
+                <span className="h-1 w-6 rounded-full bg-white/35" />
+                <span className="h-1 w-6 rounded-full bg-white/35" />
+              </div>
+
+              <p className="mt-6 text-sm text-white/70">
+                Smart billing. Simple business management.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right login panel */}
+        <div className="flex w-full flex-col justify-center px-6 py-10 sm:px-12 lg:w-[52%] lg:px-16 xl:px-20">
+          <div className="mx-auto w-full max-w-[400px]">
+            <div className="mb-8 text-center lg:text-left">
+              <div className="text-xl font-extrabold tracking-[0.14em] text-brand-600">SANRO</div>
+              <div className="mt-0.5 text-[10px] font-medium tracking-[0.16em] text-ink-muted">
+                FIBRE GLASS INDUSTRIES
+              </div>
+            </div>
+
+            <h2 className="text-3xl font-semibold tracking-tight text-ink">Welcome back</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Sign in to continue to your business dashboard.
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                    strokeWidth={1.75}
+                  />
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="h-11 w-full rounded-lg border border-border bg-white pl-10 pr-3 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-600/15"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-ink">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                    strokeWidth={1.75}
+                  />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="h-11 w-full rounded-lg border border-border bg-white pl-10 pr-10 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-600/15"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" strokeWidth={1.75} />
+                    ) : (
+                      <Eye className="h-4 w-4" strokeWidth={1.75} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex cursor-pointer items-center gap-2 text-ink-secondary">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className={cn(
+                      'h-4 w-4 rounded border-border text-accent accent-accent',
+                    )}
+                  />
+                  Remember me
+                </label>
+              </div>
+
+              {error && (
+                <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-danger">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+                {submitting ? 'Signing in…' : 'Sign In'}
+                <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+              </Button>
+            </form>
+
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-ink-muted">or continue with</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="w-full"
+              disabled={googleLoading || submitting}
+              onClick={handleGoogleSignIn}
+            >
+              <GoogleIcon />
+              {googleLoading ? 'Redirecting to Google…' : 'Sign in with Google'}
+            </Button>
+
+            <p className="mt-10 flex items-center justify-center gap-1.5 text-center text-xs text-ink-muted">
+              <Shield className="h-3.5 w-3.5" strokeWidth={1.75} />
+              Secure access for authorized Sanro personnel.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.3h6.44c-.28 1.5-1.12 2.77-2.39 3.62v3.01h3.87c2.26-2.08 3.57-5.14 3.57-8.66z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.87-3.01c-1.08.72-2.46 1.15-4.06 1.15-3.12 0-5.76-2.11-6.7-4.94H1.28v3.1C3.25 21.3 7.31 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.3 14.29A7.2 7.2 0 0 1 4.91 12c0-.8.14-1.57.39-2.29V6.61H1.28A11.96 11.96 0 0 0 0 12c0 1.94.46 3.77 1.28 5.39l4.02-3.1z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.76 0 3.34.61 4.58 1.8l3.43-3.43C17.94 1.19 15.23 0 12 0 7.31 0 3.25 2.7 1.28 6.61l4.02 3.1C6.24 6.86 8.88 4.75 12 4.75z"
+      />
+    </svg>
+  )
+}
