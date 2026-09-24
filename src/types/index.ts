@@ -4,6 +4,7 @@ export type PaymentStatus = 'paid' | 'partial' | 'pending'
 export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock'
 export type PaymentMethod = 'cash' | 'upi' | 'bank_transfer' | 'card' | 'credit' | 'partial'
 export type CustomerType = 'retail' | 'dealer' | 'contractor'
+export type GstRegistration = 'registered' | 'composition' | 'unregistered' | 'consumer'
 
 export interface Profile {
   id: string
@@ -21,6 +22,17 @@ export interface Customer {
   address?: string | null
   gstin?: string | null
   customer_type: CustomerType
+  contact_person?: string | null
+  alt_phone?: string | null
+  city?: string | null
+  state_code?: string | null
+  pincode?: string | null
+  gst_registration?: GstRegistration
+  pan?: string | null
+  payment_terms_days?: number
+  credit_limit?: number
+  opening_balance?: number
+  notes?: string | null
   total_purchases: number
   outstanding: number
   last_purchase?: string | null
@@ -44,6 +56,8 @@ export interface Product {
   colour?: string | null
   finish?: string | null
   hsn_code?: string | null
+  unit?: string | null
+  brand?: string | null
   gst_rate: number
   mrp: number
   selling_price: number
@@ -72,6 +86,7 @@ export interface InvoiceItem {
   product_id: string
   product_name: string
   size?: string
+  hsn_code?: string
   quantity: number
   rate: number
   discount: number
@@ -85,19 +100,25 @@ export interface Invoice {
   invoice_number: string
   customer_id: string
   customer_name: string
+  customer_phone?: string | null
   invoice_date: string
   subtotal: number
   discount: number
   taxable_amount: number
   cgst: number
   sgst: number
+  igst?: number
   grand_total: number
   amount_paid: number
   balance_due: number
   payment_status: PaymentStatus
   payment_method?: PaymentMethod | null
   items: InvoiceItem[]
+  item_count?: number
   notes?: string | null
+  billing_address?: string | null
+  customer_gstin?: string | null
+  place_of_supply?: string | null
   created_at: string
 }
 
@@ -113,19 +134,6 @@ export interface Payment {
   method: PaymentMethod
   reference?: string | null
   notes?: string | null
-}
-
-export interface InventoryRow {
-  id: string
-  product_id: string
-  product_name: string
-  sku: string
-  opening_stock: number
-  purchases: number
-  sales: number
-  current_stock: number
-  minimum_stock: number
-  status: StockStatus
 }
 
 export interface CompanySettings {

@@ -13,7 +13,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
 
 export function LoginPage() {
   const { user, loading, signIn, signInWithGoogle, isDemoMode } = useAuth()
@@ -54,94 +53,98 @@ export function LoginPage() {
       setGoogleLoading(false)
       setError(result.error)
     }
-    // On success, Supabase redirects to Google — no navigate needed
   }
 
   return (
-    <div className="flex min-h-screen bg-surface-muted">
-      <div className="m-auto flex h-[min(920px,100vh)] w-full max-w-[1280px] overflow-hidden bg-white shadow-sm lg:h-[min(860px,94vh)] lg:rounded-2xl lg:border lg:border-border">
-        {/* Left visual panel */}
-        <div className="relative hidden w-[48%] overflow-hidden lg:block">
+    <div className="sanro-canvas flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="m-auto flex h-[min(920px,100vh)] w-full max-w-[1200px] overflow-hidden bg-white sanro-panel lg:h-[min(820px,92vh)] lg:rounded-lg">
+        <div className="relative hidden w-[46%] overflow-hidden lg:block">
           <img
             src="/logobg.png"
             alt="Premium fibre glass door"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/45 to-slate-900/30" />
 
-          <div className="absolute right-5 top-5 flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+          <div className="absolute right-6 top-6 flex items-center gap-1.5 rounded-full bg-white/12 px-3.5 py-1.5 text-[11px] font-semibold tracking-wide text-white backdrop-blur-md">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
             Secure Access
           </div>
 
-          <div className="relative z-10 flex h-full flex-col px-10 py-10 text-white">
+          <div className="relative z-10 flex h-full flex-col px-11 py-11 text-white">
             <div>
-              <div className="text-2xl font-extrabold tracking-[0.16em]">SANRO</div>
-              <div className="mt-1 text-[11px] font-medium tracking-[0.18em] text-white/80">
+              <div className="text-[1.75rem] font-extrabold tracking-[0.2em]">SANRO</div>
+              <div className="mt-1.5 text-[11px] font-semibold tracking-[0.22em] text-white/70">
                 FIBRE GLASS INDUSTRIES
               </div>
-              <div className="mt-3 h-0.5 w-10 bg-accent" />
+              <div className="mt-4 h-0.5 w-12 rounded-full bg-white" />
             </div>
 
-            <div className="mt-auto max-w-md pb-8">
-              <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
+            <div className="mt-auto max-w-md pb-6">
+              <h1 className="text-[2.35rem] font-extrabold leading-[1.15] tracking-tight">
                 Strong Doors for a Better Tomorrow.
               </h1>
-              <p className="mt-3 text-[15px] text-white/80">
+              <p className="mt-4 text-[15px] leading-relaxed text-white/75">
                 Premium fibre glass doors for modern spaces.
               </p>
 
-              <ul className="mt-8 space-y-3 text-sm text-white/90">
+              <ul className="mt-9 space-y-3.5 text-sm font-medium text-white/90">
                 <li className="flex items-center gap-3">
-                  <Shield className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  Durable
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                    <Shield className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  </span>
+                  Durable construction
                 </li>
                 <li className="flex items-center gap-3">
-                  <Sun className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  Weather Resistant
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                    <Sun className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  </span>
+                  Weather resistant
                 </li>
                 <li className="flex items-center gap-3">
-                  <Gem className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  Modern Designs
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                    <Gem className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  </span>
+                  Modern design language
                 </li>
               </ul>
 
-              <div className="mt-10 flex gap-1.5">
-                <span className="h-1 w-6 rounded-full bg-accent" />
-                <span className="h-1 w-6 rounded-full bg-white/35" />
-                <span className="h-1 w-6 rounded-full bg-white/35" />
-              </div>
-
-              <p className="mt-6 text-sm text-white/70">
+              <p className="mt-10 text-sm font-medium text-white/55">
                 Smart billing. Simple business management.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right login panel */}
-        <div className="flex w-full flex-col justify-center px-6 py-10 sm:px-12 lg:w-[52%] lg:px-16 xl:px-20">
+        <div className="flex w-full flex-col justify-center px-6 py-10 sm:px-12 lg:w-[54%] lg:px-16 xl:px-20">
           <div className="mx-auto w-full max-w-[400px]">
-            <div className="mb-8 text-center lg:text-left">
-              <div className="text-xl font-extrabold tracking-[0.14em] text-brand-600">SANRO</div>
-              <div className="mt-0.5 text-[10px] font-medium tracking-[0.16em] text-ink-muted">
+            <div className="mb-9 text-center lg:text-left">
+              <div className="text-xl font-extrabold tracking-[0.16em] text-brand-600">
+                SANRO
+              </div>
+              <div className="mt-1 text-[10px] font-semibold tracking-[0.18em] text-slate-400">
                 FIBRE GLASS INDUSTRIES
               </div>
             </div>
 
-            <h2 className="text-3xl font-semibold tracking-tight text-ink">Welcome back</h2>
-            <p className="mt-2 text-sm text-ink-muted">
+            <h2 className="text-[1.85rem] font-bold tracking-tight text-slate-900">
+              Welcome back
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
               Sign in to continue to your business dashboard.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <form onSubmit={handleSubmit} className="mt-9 space-y-5">
               <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink">
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-[13px] font-semibold text-slate-700"
+                >
                   Email
                 </label>
                 <div className="relative">
                   <Mail
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                     strokeWidth={1.75}
                   />
                   <input
@@ -152,18 +155,21 @@ export function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="h-11 w-full rounded-lg border border-border bg-white pl-10 pr-3 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-600/15"
+                    className="h-12 w-full rounded-xl bg-white sanro-control pl-11 pr-3 text-sm outline-none transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-ink">
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-[13px] font-semibold text-slate-700"
+                >
                   Password
                 </label>
                 <div className="relative">
                   <Lock
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                     strokeWidth={1.75}
                   />
                   <input
@@ -174,12 +180,12 @@ export function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="h-11 w-full rounded-lg border border-border bg-white pl-10 pr-10 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-600/15"
+                    className="h-12 w-full rounded-xl bg-white sanro-control pl-11 pr-11 text-sm outline-none transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -192,21 +198,19 @@ export function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex cursor-pointer items-center gap-2 text-ink-secondary">
+                <label className="flex cursor-pointer items-center gap-2.5 text-slate-500">
                   <input
                     type="checkbox"
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
-                    className={cn(
-                      'h-4 w-4 rounded border-border text-accent accent-accent',
-                    )}
+                    className="h-4 w-4 rounded accent-[#1e3a5f] shadow-[0_0_0_1px_rgba(15,23,42,0.12)]"
                   />
                   Remember me
                 </label>
               </div>
 
               {error && (
-                <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-danger">
+                <div className="rounded-xl bg-rose-50 px-3.5 py-2.5 text-sm text-rose-600 shadow-[0_1px_3px_rgba(220,38,38,0.1)]">
                   {error}
                 </div>
               )}
@@ -217,10 +221,12 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-ink-muted">or continue with</span>
-              <div className="h-px flex-1 bg-border" />
+            <div className="my-7 flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+                or
+              </span>
+              <div className="h-px flex-1 bg-slate-200" />
             </div>
 
             <Button
@@ -235,7 +241,7 @@ export function LoginPage() {
               {googleLoading ? 'Redirecting to Google…' : 'Sign in with Google'}
             </Button>
 
-            <p className="mt-10 flex items-center justify-center gap-1.5 text-center text-xs text-ink-muted">
+            <p className="mt-10 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
               <Shield className="h-3.5 w-3.5" strokeWidth={1.75} />
               Secure access for authorized Sanro personnel.
             </p>

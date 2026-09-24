@@ -25,28 +25,27 @@ import { useSidebar } from '@/components/layout/SidebarContext'
 import { companyStateCode, getCompanySettings, useCompanySettings } from '@/lib/company'
 import { fetchCustomers, fetchProducts } from '@/lib/data'
 import { useAsync } from '@/lib/useAsync'
+import type { Customer, Product } from '@/types'
 import type {
-  Customer,
-  Invoice,
-  InvoiceItem,
-  PaymentMethod,
-  PaymentStatus,
-  Product,
-} from '@/types'
+  Quotation,
+  QuotationItem,
+  QuotationStatus,
+  QuotationType,
+} from '@/types/quotation'
 import { cn, formatCurrencyExact, toISODate } from '@/lib/utils'
 import {
-  commitInvoiceNumber,
-  formatInvoiceNumber,
-  getNextInvoiceNumber,
-} from '@/lib/invoiceNumber'
+  commitQuotationNumber,
+  formatQuotationNumber,
+  getNextQuotationNumber,
+} from '@/lib/quotationNumber'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import {
-  fetchInvoice,
-  fetchLastInvoiceSeq,
-  saveSalesInvoice,
-  type LoadedInvoice,
-} from '@/lib/salesInvoices'
-import { parseISO } from 'date-fns'
+  fetchQuotation,
+  fetchLastQuotationSeq,
+  saveQuotation,
+  type LoadedQuotation,
+} from '@/lib/quotations'
+import { addDays, parseISO } from 'date-fns'
 
 interface BillLine {
   key: string
@@ -62,6 +61,26 @@ interface BillLine {
 
 const GST_RATES = [0, 5, 12, 18, 28]
 const MIN_ROWS = 5
+
+const DEFAULT_TERMS = `1. Prices are valid till the date mentioned above.
+2. Payment terms as agreed upon confirmation of order.
+3. Delivery schedule to be confirmed on order.
+4. Goods once sold will not be taken back.
+5. Subject to Kerala jurisdiction.`
+
+const QUOTATION_TYPES: { value: QuotationType; label: string }[] = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'dealer', label: 'Dealer' },
+  { value: 'project', label: 'Project' },
+  { value: 'estimation', label: 'Estimation' },
+]
+
+const QUOTATION_STATUSES: { value: QuotationStatus; label: string }[] = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'converted', label: 'Converted' },
+  { value: 'expired', label: 'Expired' },
+]
 
 const STATES: { code: string; name: string }[] = [
   { code: '35', name: 'Andaman and Nicobar Islands' },
@@ -102,20 +121,15 @@ const STATES: { code: string; name: string }[] = [
   { code: '19', name: 'West Bengal' },
 ]
 
-const paymentMethods: { value: PaymentMethod; label: string }[] = [
-  { value: 'cash', label: 'Cash' },
-  { value: 'upi', label: 'UPI' },
-  { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'card', label: 'Card' },
-  { value: 'credit', label: 'Credit' },
-  { value: 'partial', label: 'Partial Payment' },
-]
-
 const fieldClass =
   'h-9 w-full rounded-md bg-white sanro-control px-3 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF]'
 
 const cellInputClass =
   'h-8 w-full rounded-md bg-white sanro-control px-2.5 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF]'
+
+function defaultValidTill(dateStr: string) {
+  return toISODate(addDays(parseISO(dateStr), 7))
+}
 
 const emptyLine = (): BillLine => ({
   key: crypto.randomUUID(),
@@ -154,13 +168,13 @@ function lineFromProduct(line: BillLine, product: Product): BillLine {
   }
 }
 
-function lineFromInvoiceItem(item: InvoiceItem, products: Product[]): BillLine {
+function lineFromQuotationItem(item: QuotationItem, products: Product[]): BillLine {
   const product = products.find((p) => p.id === item.product_id)
   return {
     key: crypto.randomUUID(),
     productId: item.product_id || null,
     description: item.product_name,
-    spec: [item.size, item.specs?.colour].filter(Boolean).join(', '),
+    spec: item.size ?? '',
     hsn: item.hsn_code ?? product?.hsn_code ?? '',
     quantity: item.quantity,
     rate: item.rate,
@@ -197,21 +211,21 @@ function useProductMatches(query: string) {
 interface BillData {
   customers: Customer[]
   products: Product[]
-  existing?: LoadedInvoice
+  existing?: LoadedQuotation
 }
 
-async function loadBillData(invoiceId: string | undefined): Promise<BillData> {
+async function loadBillData(quotationId: string | undefined): Promise<BillData> {
   if (!isSupabaseConfigured) return { customers: [], products: [] }
   const [customers, products, existing] = await Promise.all([
     fetchCustomers(),
     fetchProducts(),
-    invoiceId ? fetchInvoice(invoiceId) : Promise.resolve(null),
+    quotationId ? fetchQuotation(quotationId) : Promise.resolve(null),
   ])
-  if (invoiceId && !existing) throw new Error('This invoice could not be found.')
+  if (quotationId && !existing) throw new Error('This quotation could not be found.')
   return { customers, products, existing: existing ?? undefined }
 }
 
-export function NewBillPage() {
+export function QuotationFormPage() {
   const { id } = useParams()
   useCompanySettings()
   const { data, loading, error } = useAsync(() => loadBillData(id), [id])
@@ -224,7 +238,7 @@ export function NewBillPage() {
         ) : (
           <>
             <Loader2 className="h-5 w-5 animate-spin" />
-            Loadingâ€¦
+            Loading...
           </>
         )}
       </div>
@@ -233,18 +247,18 @@ export function NewBillPage() {
 
   return (
     <ProductsContext.Provider value={data.products}>
-      <SalesInvoiceForm
-        key={data.existing?.invoice.id ?? 'new'}
+      <QuotationForm
+        key={data.existing?.quotation.id ?? 'new'}
         customers={data.customers}
         products={data.products}
-        existing={data.existing?.invoice}
+        existing={data.existing?.quotation}
         existingCustomer={data.existing?.customer ?? null}
       />
     </ProductsContext.Provider>
   )
 }
 
-function SalesInvoiceForm({
+function QuotationForm({
   customers,
   products,
   existing,
@@ -252,7 +266,7 @@ function SalesInvoiceForm({
 }: {
   customers: Customer[]
   products: Product[]
-  existing?: Invoice
+  existing?: Quotation
   existingCustomer: Customer | null
 }) {
   const navigate = useNavigate()
@@ -261,28 +275,33 @@ function SalesInvoiceForm({
   const COMPANY_STATE = companyStateCode()
   const initialBilling = existingCustomer ? billingFieldsFor(existingCustomer) : null
 
-  const [invoiceDate, setInvoiceDate] = useState(
-    () => existing?.invoice_date ?? toISODate(new Date()),
+  const [quotationDate, setQuotationDate] = useState(
+    () => existing?.quotation_date ?? toISODate(new Date()),
   )
-  const [invoiceNumber, setInvoiceNumber] = useState(
-    () => existing?.invoice_number ?? getNextInvoiceNumber(),
+  const [validTill, setValidTill] = useState(
+    () =>
+      existing?.valid_till ??
+      defaultValidTill(existing?.quotation_date ?? toISODate(new Date())),
+  )
+  const [quotationNumber, setQuotationNumber] = useState(
+    () => existing?.quotation_number ?? getNextQuotationNumber(),
   )
   const [editNumber, setEditNumber] = useState(false)
   const [numberEdited, setNumberEdited] = useState(isEdit)
 
   useEffect(() => {
     if (numberEdited) return
-    const year = parseISO(invoiceDate).getFullYear()
-    setInvoiceNumber(getNextInvoiceNumber(parseISO(invoiceDate)))
+    const year = parseISO(quotationDate).getFullYear()
+    setQuotationNumber(getNextQuotationNumber(parseISO(quotationDate)))
     if (!isSupabaseConfigured) return
     let cancelled = false
-    void fetchLastInvoiceSeq(year).then((seq) => {
-      if (!cancelled && seq !== null) setInvoiceNumber(formatInvoiceNumber(year, seq + 1))
+    void fetchLastQuotationSeq(year).then((seq) => {
+      if (!cancelled && seq !== null) setQuotationNumber(formatQuotationNumber(year, seq + 1))
     })
     return () => {
       cancelled = true
     }
-  }, [invoiceDate, numberEdited])
+  }, [quotationDate, numberEdited])
 
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -300,6 +319,10 @@ function SalesInvoiceForm({
   const [placeOfSupply, setPlaceOfSupply] = useState(
     existing?.place_of_supply ?? initialBilling?.state ?? COMPANY_STATE,
   )
+  const [quotationType, setQuotationType] = useState<QuotationType>(
+    existing?.quotation_type ?? 'standard',
+  )
+  const [status, setStatus] = useState<QuotationStatus>(existing?.status ?? 'draft')
   const [showNewCustomer, setShowNewCustomer] = useState(false)
   const [customerList, setCustomerList] = useState(customers)
 
@@ -309,19 +332,17 @@ function SalesInvoiceForm({
 
   const [lines, setLines] = useState<BillLine[]>(() =>
     existing?.items.length
-      ? existing.items.map((item) => lineFromInvoiceItem(item, products))
+      ? existing.items.map((item) => lineFromQuotationItem(item, products))
       : [emptyLine()],
   )
   const [activeRow, setActiveRow] = useState<string | null>(null)
   const [itemSearch, setItemSearch] = useState('')
   const [itemSearchOpen, setItemSearchOpen] = useState(false)
 
-  const [narration, setNarration] = useState(existing?.notes ?? '')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    existing?.payment_method ?? 'cash',
-  )
-  const [amountPaid, setAmountPaid] = useState(existing?.amount_paid ?? 0)
-  const [paidTouched, setPaidTouched] = useState(isEdit)
+  // Notes & terms are not shown on the form UI; they still appear on the quotation PDF.
+  const notes = existing?.notes ?? ''
+  const terms = existing?.terms ?? DEFAULT_TERMS
+  const [remarks, setRemarks] = useState(existing?.remarks ?? '')
 
   const filteredCustomers = useMemo(() => {
     const q = customerQuery.toLowerCase().trim()
@@ -357,15 +378,6 @@ function SalesInvoiceForm({
       singleRate: rates.length === 1 ? rates[0] : null,
     }
   }, [lines])
-
-  useEffect(() => {
-    if (paidTouched) return
-    setAmountPaid(
-      paymentMethod === 'credit' || paymentMethod === 'partial' ? 0 : totals.grand,
-    )
-  }, [totals.grand, paymentMethod, paidTouched])
-
-  const balance = Math.max(0, totals.grand - amountPaid)
 
   function selectCustomer(c: Customer) {
     setCustomer(c)
@@ -417,7 +429,7 @@ function SalesInvoiceForm({
     )
   }
 
-  async function handleGenerate() {
+  async function persist(asDraft: boolean) {
     if (saving) return
     setSaveError('')
     const filledLines = lines.filter((l) => l.description.trim())
@@ -429,27 +441,31 @@ function SalesInvoiceForm({
       setSaveError('Please add at least one item.')
       return
     }
-    if (!invoiceNumber.trim()) {
-      setSaveError('Please enter an invoice number.')
+    if (!quotationNumber.trim()) {
+      setSaveError('Please enter a quotation number.')
       return
     }
     if (!isSupabaseConfigured) {
-      setSaveError('Connect Supabase in .env to save invoices.')
+      setSaveError('Connect Supabase in .env to save quotations.')
       return
     }
 
-    const paid = Math.min(amountPaid, totals.grand)
-    const balanceDue = Math.max(0, totals.grand - paid)
-    const payment_status: PaymentStatus =
-      balanceDue <= 0.005 ? 'paid' : paid > 0 ? 'partial' : 'pending'
+    const saveStatus: QuotationStatus = asDraft ? 'draft' : isEdit ? status : 'pending'
+    if (asDraft) setStatus('draft')
+    else if (!isEdit) setStatus('pending')
 
     setSaving(true)
     try {
-      const { invoiceId } = await saveSalesInvoice(
+      const { quotationId } = await saveQuotation(
         { ...customer, address: address.trim() || customer.address, gstin: gstin || null },
         {
-          invoice_number: invoiceNumber.trim(),
-          invoice_date: invoiceDate,
+          quotation_number: quotationNumber.trim(),
+          quotation_date: quotationDate,
+          valid_till: validTill || undefined,
+          quotation_type: quotationType,
+          billing_address: address.trim() || undefined,
+          customer_gstin: gstin || undefined,
+          place_of_supply: placeOfSupply || undefined,
           subtotal: totals.subtotal,
           discount: totals.discount,
           taxable_amount: totals.taxable,
@@ -457,14 +473,10 @@ function SalesInvoiceForm({
           sgst: interState ? 0 : totals.tax / 2,
           igst: interState ? totals.tax : 0,
           grand_total: totals.grand,
-          amount_paid: paid,
-          balance_due: balanceDue,
-          payment_status,
-          payment_method: paymentMethod,
-          notes: narration.trim() || undefined,
-          billing_address: address.trim() || undefined,
-          customer_gstin: gstin || undefined,
-          place_of_supply: placeOfSupply || undefined,
+          status: saveStatus,
+          notes: notes.trim() || undefined,
+          terms: terms.trim() || undefined,
+          remarks: remarks.trim() || undefined,
         },
         filledLines.map((l) => ({
           product_id: l.productId,
@@ -480,13 +492,21 @@ function SalesInvoiceForm({
         })),
         existing?.id,
       )
-      if (!existing) commitInvoiceNumber(invoiceNumber.trim())
-      navigate(`/invoices/${invoiceId}`)
+      if (!existing) commitQuotationNumber(quotationNumber.trim())
+      navigate(`/quotations/${quotationId}`)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save the invoice.')
+      setSaveError(err instanceof Error ? err.message : 'Could not save the quotation.')
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleGenerate() {
+    void persist(false)
+  }
+
+  function handleSaveDraft() {
+    void persist(true)
   }
 
   const halfRate = totals.singleRate !== null ? totals.singleRate / 2 : null
@@ -510,12 +530,10 @@ function SalesInvoiceForm({
           </div>
           <div>
             <h1 className="text-lg font-semibold text-ink">
-              {isEdit ? 'Edit Sales Invoice' : 'Sales Invoice'}
+              {isEdit ? 'Edit Quotation' : 'Quotation'}
             </h1>
             <p className="text-[13px] text-ink-muted">
-              {isEdit
-                ? `Update invoice ${existing.invoice_number}`
-                : 'Create a new sales invoice'}
+              Create a new quotation for your customer.
             </p>
           </div>
         </div>
@@ -523,13 +541,13 @@ function SalesInvoiceForm({
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-[190px]">
             <label className="mb-1 block text-xs font-medium text-ink-secondary">
-              Invoice No.
+              Quotation No.
             </label>
             <div className="relative">
               <input
-                value={invoiceNumber}
+                value={quotationNumber}
                 onChange={(e) => {
-                  setInvoiceNumber(e.target.value)
+                  setQuotationNumber(e.target.value)
                   setNumberEdited(true)
                 }}
                 readOnly={!editNumber}
@@ -542,8 +560,8 @@ function SalesInvoiceForm({
                   'absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-ink-muted hover:text-ink',
                   editNumber && 'text-accent',
                 )}
-                aria-label="Edit invoice number"
-                title="Edit invoice number"
+                aria-label="Edit quotation number"
+                title="Edit quotation number"
               >
                 <Settings2 className="h-4 w-4" strokeWidth={1.75} />
               </button>
@@ -553,14 +571,26 @@ function SalesInvoiceForm({
             <label className="mb-1 block text-xs font-medium text-ink-secondary">
               Date
             </label>
-            <DatePicker value={invoiceDate} onChange={setInvoiceDate} />
+            <DatePicker
+              value={quotationDate}
+              onChange={(v) => {
+                setQuotationDate(v)
+                if (!isEdit) setValidTill(defaultValidTill(v))
+              }}
+            />
+          </div>
+          <div className="w-[170px]">
+            <label className="mb-1 block text-xs font-medium text-ink-secondary">
+              Valid Till
+            </label>
+            <DatePicker value={validTill} onChange={setValidTill} />
           </div>
         </div>
       </div>
 
-      {/* Customer details */}
-      <Section title="Customer Details">
-        <div className="grid gap-x-8 gap-y-3 lg:grid-cols-2">
+      {/* Customer + Additional Details */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Section title="Customer Details">
           <div className="space-y-3">
             <FieldRow label="Customer">
               <div className="flex gap-2">
@@ -629,9 +659,11 @@ function SalesInvoiceForm({
               />
             </FieldRow>
           </div>
+        </Section>
 
-          <div className="space-y-3">
-            <FieldRow label="GSTIN">
+        <Section title="Additional Details">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CompactField label="GSTIN">
               <input
                 value={gstin}
                 onChange={(e) => handleGstinChange(e.target.value)}
@@ -639,20 +671,39 @@ function SalesInvoiceForm({
                 maxLength={15}
                 className={fieldClass}
               />
-            </FieldRow>
-            <FieldRow label="State">
+            </CompactField>
+            <CompactField label="Quotation Type">
+              <div className="relative">
+                <select
+                  value={quotationType}
+                  onChange={(e) => setQuotationType(e.target.value as QuotationType)}
+                  className="sanro-select !h-9 !text-[13px]"
+                >
+                  {QUOTATION_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                  strokeWidth={1.75}
+                />
+              </div>
+            </CompactField>
+            <CompactField label="State">
               <StateSelect value={state} onChange={setState} placeholder="Select state" />
-            </FieldRow>
-            <FieldRow label="Place of Supply">
+            </CompactField>
+            <CompactField label="Place of Supply">
               <StateSelect
                 value={placeOfSupply}
                 onChange={setPlaceOfSupply}
                 placeholder="Select place of supply"
               />
-            </FieldRow>
+            </CompactField>
           </div>
-        </div>
-      </Section>
+        </Section>
+      </div>
 
       {/* Items */}
       <Section
@@ -867,72 +918,49 @@ function SalesInvoiceForm({
         </div>
       </Section>
 
-      {/* Narration + totals */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-lg bg-[#FCFCFD] p-4 shadow-[0_0_0_1px_#EEF0F3]">
-          <label className="mb-2 block text-[13px] font-semibold text-ink">
-            Narration <span className="font-normal text-ink-muted">(Optional)</span>
-          </label>
-          <textarea
-            value={narration}
-            onChange={(e) => setNarration(e.target.value)}
-            placeholder="Any additional notes for this invoice..."
-            className="min-h-[84px] w-full rounded-md bg-white sanro-control px-3 py-2 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF]"
-          />
-        </div>
-
-        <div className="overflow-hidden rounded-lg bg-[#F9FAFB] shadow-[0_0_0_1px_#EEF0F3]">
-          <dl className="space-y-2 px-4 py-4 text-[13px]">
-            <TotalRow label="Sub Total" value={totals.subtotal} />
-            <TotalRow label="Discount" value={totals.discount} />
-            <div className="pt-1 shadow-[inset_0_1px_0_0_#EEF0F3]" />
-            <TotalRow label="Taxable Amount" value={totals.taxable} />
-            {interState ? (
-              <TotalRow
-                label={`IGST${totals.singleRate !== null ? ` (${totals.singleRate}%)` : ''}`}
-                value={totals.tax}
+      {/* Totals - single horizontal line; notes & terms stay on PDF only */}
+      <div className="mt-4 overflow-x-auto rounded-lg bg-[#F9FAFB] shadow-[0_0_0_1px_#EEF0F3]">
+        <div className="flex min-w-max items-stretch divide-x divide-[#EEF0F3]">
+          <TotalCell label="Sub Total" value={totals.subtotal} />
+          <TotalCell label="Discount" value={totals.discount} />
+          <TotalCell label="Taxable Amount" value={totals.taxable} />
+          {interState ? (
+            <TotalCell
+              label={`IGST${totals.singleRate !== null ? ` (${totals.singleRate}%)` : ''}`}
+              value={totals.tax}
+            />
+          ) : (
+            <>
+              <TotalCell
+                label={`CGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
+                value={totals.tax / 2}
               />
-            ) : (
-              <>
-                <TotalRow
-                  label={`CGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
-                  value={totals.tax / 2}
-                />
-                <TotalRow
-                  label={`SGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
-                  value={totals.tax / 2}
-                />
-              </>
-            )}
-          </dl>
-          <div className="flex items-center justify-between bg-blue-50 px-4 py-3.5">
-            <span className="text-[15px] font-semibold text-ink">Grand Total</span>
-            <span className="text-lg font-bold text-ink">
-              {formatCurrencyExact(totals.grand)}
-            </span>
-          </div>
+              <TotalCell
+                label={`SGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
+                value={totals.tax / 2}
+              />
+            </>
+          )}
+          <TotalCell label="Grand Total" value={totals.grand} emphasize />
         </div>
       </div>
 
-      {/* Payment + actions */}
+      {/* Status, remarks + actions */}
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="w-[190px]">
+        <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+          <div className="w-[160px]">
             <label className="mb-1 block text-xs font-medium text-ink-secondary">
-              Payment Method
+              Quotation Status
             </label>
             <div className="relative">
               <select
-                value={paymentMethod}
-                onChange={(e) => {
-                  setPaymentMethod(e.target.value as PaymentMethod)
-                  setPaidTouched(false)
-                }}
+                value={status}
+                onChange={(e) => setStatus(e.target.value as QuotationStatus)}
                 className="sanro-select !h-9 !text-[13px]"
               >
-                {paymentMethods.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
+                {QUOTATION_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
                   </option>
                 ))}
               </select>
@@ -942,34 +970,16 @@ function SalesInvoiceForm({
               />
             </div>
           </div>
-          <div className="w-[130px]">
+          <div className="min-w-[200px] flex-1">
             <label className="mb-1 block text-xs font-medium text-ink-secondary">
-              Amount Paid (â‚¹)
+              Remarks (Internal)
             </label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={Number(amountPaid.toFixed(2))}
-              onChange={(e) => {
-                setPaidTouched(true)
-                setAmountPaid(Math.max(0, Number(e.target.value) || 0))
-              }}
-              className={fieldClass}
-            />
-          </div>
-          <div className="w-[130px]">
-            <label className="mb-1 block text-xs font-medium text-ink-secondary">
-              Balance (â‚¹)
-            </label>
-            <input
-              readOnly
-              value={balance.toFixed(2)}
-              className={cn(
-                fieldClass,
-                'bg-[#F3F4F6] text-ink-muted',
-                balance > 0 && 'text-warning',
-              )}
+            <textarea
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="Internal notes - not shown on the quotation"
+              rows={1}
+              className="h-9 w-full resize-none rounded-md bg-white sanro-control px-3 py-2 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF]"
             />
           </div>
         </div>
@@ -988,16 +998,16 @@ function SalesInvoiceForm({
             <FileDown className="h-4 w-4" strokeWidth={1.75} />
             Save as PDF
           </ActionButton>
-          {isEdit ? (
-            <ActionButton onClick={() => navigate(`/invoices/${existing.id}`)}>
-              Cancel
-            </ActionButton>
-          ) : (
-            <ActionButton className="bg-[#F3F4F6]">Save Draft</ActionButton>
-          )}
+          <ActionButton
+            className="bg-[#F3F4F6]"
+            onClick={handleSaveDraft}
+            disabled={saving}
+          >
+            Save Draft
+          </ActionButton>
           <button
             type="button"
-            onClick={() => void handleGenerate()}
+            onClick={handleGenerate}
             disabled={saving}
             className="inline-flex h-10 items-center gap-2 rounded-md bg-accent px-5 text-[13px] font-medium text-white hover:bg-accent-hover disabled:opacity-60"
           >
@@ -1006,7 +1016,7 @@ function SalesInvoiceForm({
             ) : (
               <FileText className="h-4 w-4" strokeWidth={1.75} />
             )}
-            {saving ? 'Savingâ€¦' : isEdit ? 'Update Invoice' : 'Generate Invoice'}
+            {saving ? 'Saving...' : isEdit ? 'Update Quotation' : 'Generate Quotation'}
           </button>
         </div>
       </div>
@@ -1021,6 +1031,15 @@ function SalesInvoiceForm({
           }}
         />
       )}
+    </div>
+  )
+}
+
+function CompactField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-ink-secondary">{label}</label>
+      {children}
     </div>
   )
 }
@@ -1167,11 +1186,38 @@ function Td({ children, className }: { children?: ReactNode; className?: string 
   )
 }
 
-function TotalRow({ label, value }: { label: string; value: number }) {
+function TotalCell({
+  label,
+  value,
+  emphasize,
+}: {
+  label: string
+  value: number
+  emphasize?: boolean
+}) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-ink-secondary">{label}</dt>
-      <dd className="font-medium text-ink">{formatCurrencyExact(value)}</dd>
+    <div
+      className={cn(
+        'flex min-w-[120px] flex-1 flex-col justify-center gap-0.5 px-4 py-3',
+        emphasize && 'bg-blue-50',
+      )}
+    >
+      <span
+        className={cn(
+          'text-[11px] font-medium text-ink-secondary',
+          emphasize && 'text-ink',
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          'text-[13px] font-semibold text-ink tabular-nums',
+          emphasize && 'text-[15px] font-bold text-accent',
+        )}
+      >
+        {formatCurrencyExact(value)}
+      </span>
     </div>
   )
 }

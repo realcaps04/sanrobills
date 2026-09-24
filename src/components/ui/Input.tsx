@@ -35,10 +35,10 @@ export function Input({
         <input
           id={inputId}
           className={cn(
-            'h-11 w-full rounded-lg border border-border bg-white px-3 text-sm text-ink placeholder:text-ink-muted outline-none transition focus:border-[#7539FF] focus:ring-2 focus:ring-[#7539FF]/15',
+            'h-10 w-full rounded-md bg-white sanro-control px-3 text-sm text-ink placeholder:text-ink-muted outline-none transition',
             leftIcon ? 'pl-10' : undefined,
             rightIcon ? 'pr-10' : undefined,
-            error && 'border-danger focus:border-danger focus:ring-danger/20',
+            error && 'sanro-control--error',
             className,
           )}
           {...props}

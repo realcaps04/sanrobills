@@ -9,10 +9,11 @@ import { InvoicesPage } from '@/pages/InvoicesPage'
 import { InvoiceDetailPage } from '@/pages/InvoiceDetailPage'
 import { CustomersPage } from '@/pages/CustomersPage'
 import { ProductsPage } from '@/pages/ProductsPage'
-import { InventoryPage } from '@/pages/InventoryPage'
-import { PaymentsPage } from '@/pages/PaymentsPage'
+import { ProductFormPage } from '@/pages/ProductFormPage'
+import { QuotationsPage } from '@/pages/QuotationsPage'
+import { QuotationDetailPage } from '@/pages/QuotationDetailPage'
+import { QuotationFormPage } from '@/pages/QuotationFormPage'
 import { ReportsPage } from '@/pages/ReportsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
 
 export default function App() {
   return (
@@ -25,13 +26,18 @@ export default function App() {
               <Route index element={<DashboardPage />} />
               <Route path="bills/new" element={<NewBillPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
+              <Route path="invoices/new" element={<NewBillPage />} />
               <Route path="invoices/:id" element={<InvoiceDetailPage />} />
+              <Route path="invoices/:id/edit" element={<NewBillPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="products" element={<ProductsPage />} />
-              <Route path="inventory" element={<InventoryPage />} />
-              <Route path="payments" element={<PaymentsPage />} />
+              <Route path="products/new" element={<ProductFormPage />} />
+              <Route path="products/:id/edit" element={<ProductFormPage />} />
+              <Route path="quotations" element={<QuotationsPage />} />
+              <Route path="quotations/new" element={<QuotationFormPage />} />
+              <Route path="quotations/:id" element={<QuotationDetailPage />} />
+              <Route path="quotations/:id/edit" element={<QuotationFormPage />} />
               <Route path="reports" element={<ReportsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

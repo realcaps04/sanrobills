@@ -18,7 +18,7 @@
   --color-accent-hover: #1d4ed8;
 
   --color-surface: #ffffff;
-  --color-surface-muted: #f7f8fa;
+  --color-surface-muted: #f3f4f6;
   --color-border: #e5e7eb;
   --color-border-strong: #d1d5db;
 
@@ -29,6 +29,10 @@
   --color-success: #059669;
   --color-warning: #d97706;
   --color-danger: #dc2626;
+
+  --shadow-panel: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-inset-line: inset 0 -1px 0 0 #eef0f3;
 }
 
 @layer base {
@@ -57,11 +61,310 @@
   textarea {
     font: inherit;
   }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  ::selection {
+    background: #dbeafe;
+    color: #111827;
+  }
+
+  select,
+  .sanro-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 2.5rem;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: #ffffff;
+    background-image: none;
+    box-shadow: var(--shadow-soft);
+    padding: 0 2.25rem 0 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #111827;
+    outline: none;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  select:hover,
+  .sanro-select:hover {
+    background-color: #f9fafb;
+  }
+
+  select:focus,
+  .sanro-select:focus {
+    background-color: #ffffff;
+    box-shadow:
+      0 0 0 2px rgba(37, 99, 235, 0.2),
+      var(--shadow-soft);
+  }
+
+  select:disabled,
+  .sanro-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    background-color: #f3f4f6;
+  }
+
+  .sanro-select--error {
+    box-shadow:
+      0 0 0 1px #dc2626,
+      var(--shadow-soft);
+  }
+
+  .sanro-select--error:focus {
+    box-shadow:
+      0 0 0 2px rgba(220, 38, 38, 0.2),
+      var(--shadow-soft);
+  }
+
+  select.sanro-select--sm {
+    height: 2rem;
+    padding-left: 0.625rem;
+    padding-right: 2rem;
+    font-size: 0.75rem;
+  }
+
+  select option,
+  .sanro-select option {
+    background-color: #ffffff;
+    color: #111827;
+    font-size: 0.875rem;
+    font-weight: 400;
+    padding: 0.5rem 0.75rem;
+  }
+
+  select option:checked,
+  .sanro-select option:checked {
+    background-color: #1e3a5f;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  select option:hover,
+  .sanro-select option:hover,
+  select option:focus,
+  .sanro-select option:focus {
+    background-color: #f3f4f6;
+    color: #111827;
+  }
+
+  select option:disabled,
+  .sanro-select option:disabled {
+    color: #9ca3af;
+  }
+
+  @supports (appearance: base-select) {
+    select,
+    ::picker(select) {
+      appearance: base-select;
+    }
+
+    select {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    select::picker-icon {
+      display: none;
+    }
+
+    ::picker(select) {
+      margin-top: 4px;
+      margin-bottom: 4px;
+      padding: 4px;
+      max-height: 280px;
+      overflow-y: auto;
+      border: none;
+      border-radius: 0.5rem;
+      background: #ffffff;
+      box-shadow:
+        0 0 0 1px rgba(16, 24, 40, 0.06),
+        0 10px 24px -6px rgba(16, 24, 40, 0.16),
+        0 4px 8px -4px rgba(16, 24, 40, 0.08);
+      opacity: 0;
+      transform: translateY(-4px);
+      transition:
+        opacity 0.12s ease,
+        transform 0.12s ease,
+        overlay 0.12s allow-discrete,
+        display 0.12s allow-discrete;
+    }
+
+    select:open::picker(select) {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @starting-style {
+      select:open::picker(select) {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+    }
+
+    select option,
+    .sanro-select option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.125rem;
+      padding: 0.4375rem 0.625rem;
+      border-radius: 0.375rem;
+      font-size: 0.8125rem;
+      color: #374151;
+      cursor: pointer;
+      transition: background-color 0.1s ease, color 0.1s ease;
+    }
+
+    select option::checkmark {
+      order: 1;
+      margin-left: auto;
+      content: '✓';
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    select option:hover,
+    select option:focus-visible {
+      background-color: #f3f4f6;
+      color: #111827;
+      outline: none;
+    }
+
+    select option:checked {
+      background-color: #eff4ff;
+      color: #1e3a5f;
+      font-weight: 600;
+    }
+
+    select option:checked:hover,
+    select option:checked:focus-visible {
+      background-color: #e3ecff;
+    }
+
+    select option:disabled {
+      color: #9ca3af;
+      background: transparent;
+      cursor: not-allowed;
+    }
+  }
+
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 @layer utilities {
   .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #c5ccd6 transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sanro-canvas {
+    background: #f3f4f6;
+  }
+
+  .sanro-panel {
+    border: none;
+    background: #ffffff;
+    box-shadow: var(--shadow-panel);
+  }
+
+  .sanro-divider {
+    border: none;
+    box-shadow: var(--shadow-inset-line);
+  }
+
+  .sanro-control {
+    border: none;
+    background: #ffffff;
+    box-shadow: var(--shadow-soft);
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  .sanro-control:hover {
+    background-color: #f9fafb;
+  }
+
+  .sanro-control:focus,
+  .sanro-control:focus-within {
+    box-shadow:
+      0 0 0 2px rgba(37, 99, 235, 0.2),
+      var(--shadow-soft);
+  }
+
+  .sanro-control--error {
+    box-shadow:
+      0 0 0 1px #dc2626,
+      var(--shadow-soft);
+  }
+
+  .sanro-control--error:focus,
+  .sanro-control--error:focus-within {
+    box-shadow:
+      0 0 0 2px rgba(220, 38, 38, 0.2),
+      var(--shadow-soft);
+  }
+
+  .sanro-control--active {
+    box-shadow:
+      0 0 0 2px rgba(30, 58, 95, 0.35),
+      var(--shadow-soft);
+  }
+}
+
+@media screen {
+  .invoice-print-root {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+
+  html:has(.invoice-print-root),
+  html:has(.invoice-print-root) body {
+    height: auto;
+    background: #ffffff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body:has(.invoice-print-root) #root {
+    display: none;
+  }
+
+  .invoice-print-root {
+    display: block;
+    zoom: 0.94;
   }
 }

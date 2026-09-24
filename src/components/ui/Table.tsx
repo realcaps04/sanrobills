@@ -14,7 +14,7 @@ export function Table({ children, className }: { children: ReactNode; className?
 export function THead({ children }: { children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-border bg-surface-muted/80 text-xs font-medium uppercase tracking-wide text-ink-muted">
+      <tr className="sanro-divider bg-[#FAFAFB] text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
         {children}
       </tr>
     </thead>
@@ -22,17 +22,29 @@ export function THead({ children }: { children: ReactNode }) {
 }
 
 export function TH({ children, className }: { children?: ReactNode; className?: string }) {
-  return <th className={cn('px-5 py-3 font-medium', className)}>{children}</th>
+  return <th className={cn('px-4 py-3 font-semibold', className)}>{children}</th>
 }
 
 export function TBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-border">{children}</tbody>
+  return <tbody className="divide-y divide-[#EEF0F3]">{children}</tbody>
 }
 
 export function TR({ children, className }: { children: ReactNode; className?: string }) {
-  return <tr className={cn('hover:bg-surface-muted/50', className)}>{children}</tr>
+  return <tr className={cn('hover:bg-[#FAFAFB]', className)}>{children}</tr>
 }
 
-export function TD({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={cn('px-5 py-3.5 text-ink', className)}>{children}</td>
+export function TD({
+  children,
+  className,
+  colSpan,
+}: {
+  children?: ReactNode
+  className?: string
+  colSpan?: number
+}) {
+  return (
+    <td colSpan={colSpan} className={cn('px-4 py-3 text-ink-secondary', className)}>
+      {children}
+    </td>
+  )
 }

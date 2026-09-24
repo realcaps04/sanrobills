@@ -10,8 +10,14 @@ import {
 import type { User } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { ensureUserProfile } from '@/lib/profiles'
-import { demoProfile } from '@/data/mock'
 import type { Profile } from '@/types'
+
+const demoProfile: Profile = {
+  id: 'demo-user',
+  full_name: 'Demo User',
+  email: '',
+  role: 'owner',
+}
 
 interface AuthContextValue {
   user: Profile | null
