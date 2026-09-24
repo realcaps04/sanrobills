@@ -55,7 +55,7 @@ export function ProductFormPage() {
   return (
     <ProductForm
       key={existing?.id ?? 'new'}
-      existing={existing}
+      existing={existing ?? null}
       categories={categories}
       onCancel={() => navigate('/products')}
       onSaved={() => navigate('/products')}
