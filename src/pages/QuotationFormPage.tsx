@@ -757,11 +757,11 @@ function QuotationForm({
                 <Th className="w-[15%]">Size / Specification</Th>
                 <Th className="w-[9%]">HSN</Th>
                 <Th className="w-[7%]">Qty</Th>
-                <Th className="w-[11%] text-right">Rate (â‚¹)</Th>
-                <Th className="w-[11%] text-right">Discount (â‚¹)</Th>
+                <Th className="w-[11%] text-right">Rate (Rs)</Th>
+                <Th className="w-[11%] text-right">Discount (Rs)</Th>
                 <Th className="w-[9%]">GST %</Th>
                 <Th className="w-[11%] text-right">
-                  Amount (â‚¹)
+                  Amount (Rs)
                   <span className="block text-[10px] font-medium text-ink-muted">incl. GST</span>
                 </Th>
                 <Th className="w-10 text-center">

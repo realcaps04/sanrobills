@@ -243,9 +243,10 @@ function InvoiceDocument({
   const halfRates = [...new Set(invoice.items.map((i) => i.gst_rate / 2))]
   const halfRateLabel = halfRates.length === 1 ? ` (${halfRates[0]}%)` : ''
   const fullRateLabel = halfRates.length === 1 ? ` (${halfRates[0] * 2}%)` : ''
-  const terms = companySettings.terms_conditions
-    .split(/(?<=\.)\s+/)
-    .filter(Boolean)
+  const termsSource =
+    companySettings.terms_conditions.trim() ||
+    'Payment is due as per the due date mentioned on this invoice. Goods once sold will not be taken back. Interest may be charged on overdue payments at applicable rates. Subject to Kerala jurisdiction.'
+  const terms = termsSource.split(/(?<=\.)\s+/).filter(Boolean)
 
   return (
     <div className="bg-white text-[12.5px] text-[#111827]">

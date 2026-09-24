@@ -268,7 +268,7 @@ export function InvoicesPage() {
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Customer</th>
                 <th className="px-4 py-3">Items</th>
-                <th className="px-4 py-3 text-right">Amount (₹)</th>
+                <th className="px-4 py-3 text-right">Amount (Rs)</th>
                 <th className="px-4 py-3">Payment Method</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Action</th>

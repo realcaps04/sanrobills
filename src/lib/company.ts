@@ -16,7 +16,8 @@ const DEFAULT_SETTINGS: CompanySettings = {
   invoice_prefix: 'INV',
   starting_invoice_number: 1,
   default_gst: 18,
-  terms_conditions: '',
+  terms_conditions:
+    'Payment is due as per the due date mentioned on this invoice. Goods once sold will not be taken back. Interest may be charged on overdue payments at applicable rates. Subject to Kerala jurisdiction.',
 }
 
 let current: CompanySettings = DEFAULT_SETTINGS
@@ -53,7 +54,7 @@ export function loadCompanySettings(): Promise<void> {
         if (
           typeof value === 'string' &&
           value.trim() === '' &&
-          ['company_name', 'address', 'phone', 'email'].includes(key)
+          ['company_name', 'address', 'phone', 'email', 'terms_conditions'].includes(key)
         ) {
           continue
         }

@@ -9,12 +9,10 @@ import {
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronDown,
-  FileDown,
   FileText,
   Loader2,
   ChevronsRight,
   Plus,
-  Printer,
   Search,
   Settings2,
   Trash2,
@@ -62,6 +60,8 @@ interface BillLine {
 
 const GST_RATES = [0, 5, 12, 18, 28]
 const MIN_ROWS = 5
+
+const DEFAULT_NOTES = 'Thank you for your business.'
 
 const STATES: { code: string; name: string }[] = [
   { code: '35', name: 'Andaman and Nicobar Islands' },
@@ -316,7 +316,8 @@ function SalesInvoiceForm({
   const [itemSearch, setItemSearch] = useState('')
   const [itemSearchOpen, setItemSearchOpen] = useState(false)
 
-  const [narration, setNarration] = useState(existing?.notes ?? '')
+  // Notes & terms are not shown on the form UI; they still appear on the invoice PDF.
+  const notes = existing?.notes?.trim() || DEFAULT_NOTES
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     existing?.payment_method ?? 'cash',
   )
@@ -461,7 +462,7 @@ function SalesInvoiceForm({
           balance_due: balanceDue,
           payment_status,
           payment_method: paymentMethod,
-          notes: narration.trim() || undefined,
+          notes,
           billing_address: address.trim() || undefined,
           customer_gstin: gstin || undefined,
           place_of_supply: placeOfSupply || undefined,
@@ -706,11 +707,11 @@ function SalesInvoiceForm({
                 <Th className="w-[15%]">Size / Specification</Th>
                 <Th className="w-[9%]">HSN</Th>
                 <Th className="w-[7%]">Qty</Th>
-                <Th className="w-[11%] text-right">Rate (â‚¹)</Th>
-                <Th className="w-[11%] text-right">Discount (â‚¹)</Th>
+                <Th className="w-[11%] text-right">Rate (Rs)</Th>
+                <Th className="w-[11%] text-right">Discount (Rs)</Th>
                 <Th className="w-[9%]">GST %</Th>
                 <Th className="w-[11%] text-right">
-                  Amount (â‚¹)
+                  Amount (Rs)
                   <span className="block text-[10px] font-medium text-ink-muted">incl. GST</span>
                 </Th>
                 <Th className="w-10 text-center">
@@ -867,50 +868,30 @@ function SalesInvoiceForm({
         </div>
       </Section>
 
-      {/* Narration + totals */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-lg bg-[#FCFCFD] p-4 shadow-[0_0_0_1px_#EEF0F3]">
-          <label className="mb-2 block text-[13px] font-semibold text-ink">
-            Narration <span className="font-normal text-ink-muted">(Optional)</span>
-          </label>
-          <textarea
-            value={narration}
-            onChange={(e) => setNarration(e.target.value)}
-            placeholder="Any additional notes for this invoice..."
-            className="min-h-[84px] w-full rounded-md bg-white sanro-control px-3 py-2 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF]"
-          />
-        </div>
-
-        <div className="overflow-hidden rounded-lg bg-[#F9FAFB] shadow-[0_0_0_1px_#EEF0F3]">
-          <dl className="space-y-2 px-4 py-4 text-[13px]">
-            <TotalRow label="Sub Total" value={totals.subtotal} />
-            <TotalRow label="Discount" value={totals.discount} />
-            <div className="pt-1 shadow-[inset_0_1px_0_0_#EEF0F3]" />
-            <TotalRow label="Taxable Amount" value={totals.taxable} />
-            {interState ? (
-              <TotalRow
-                label={`IGST${totals.singleRate !== null ? ` (${totals.singleRate}%)` : ''}`}
-                value={totals.tax}
+      {/* Totals - single horizontal line; notes & terms stay on PDF only */}
+      <div className="mt-4 overflow-x-auto rounded-lg bg-[#F9FAFB] shadow-[0_0_0_1px_#EEF0F3]">
+        <div className="flex min-w-max items-stretch divide-x divide-[#EEF0F3]">
+          <TotalCell label="Sub Total" value={totals.subtotal} />
+          <TotalCell label="Discount" value={totals.discount} />
+          <TotalCell label="Taxable Amount" value={totals.taxable} />
+          {interState ? (
+            <TotalCell
+              label={`IGST${totals.singleRate !== null ? ` (${totals.singleRate}%)` : ''}`}
+              value={totals.tax}
+            />
+          ) : (
+            <>
+              <TotalCell
+                label={`CGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
+                value={totals.tax / 2}
               />
-            ) : (
-              <>
-                <TotalRow
-                  label={`CGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
-                  value={totals.tax / 2}
-                />
-                <TotalRow
-                  label={`SGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
-                  value={totals.tax / 2}
-                />
-              </>
-            )}
-          </dl>
-          <div className="flex items-center justify-between bg-blue-50 px-4 py-3.5">
-            <span className="text-[15px] font-semibold text-ink">Grand Total</span>
-            <span className="text-lg font-bold text-ink">
-              {formatCurrencyExact(totals.grand)}
-            </span>
-          </div>
+              <TotalCell
+                label={`SGST${halfRate !== null ? ` (${halfRate}%)` : ''}`}
+                value={totals.tax / 2}
+              />
+            </>
+          )}
+          <TotalCell label="Grand Total" value={totals.grand} emphasize />
         </div>
       </div>
 
@@ -944,7 +925,7 @@ function SalesInvoiceForm({
           </div>
           <div className="w-[130px]">
             <label className="mb-1 block text-xs font-medium text-ink-secondary">
-              Amount Paid (â‚¹)
+              Amount Paid (Rs)
             </label>
             <input
               type="number"
@@ -960,7 +941,7 @@ function SalesInvoiceForm({
           </div>
           <div className="w-[130px]">
             <label className="mb-1 block text-xs font-medium text-ink-secondary">
-              Balance (â‚¹)
+              Balance (Rs)
             </label>
             <input
               readOnly
@@ -980,20 +961,10 @@ function SalesInvoiceForm({
               {saveError}
             </p>
           )}
-          <ActionButton onClick={() => window.print()}>
-            <Printer className="h-4 w-4" strokeWidth={1.75} />
-            Print
-          </ActionButton>
-          <ActionButton onClick={() => window.print()}>
-            <FileDown className="h-4 w-4" strokeWidth={1.75} />
-            Save as PDF
-          </ActionButton>
-          {isEdit ? (
+          {isEdit && (
             <ActionButton onClick={() => navigate(`/invoices/${existing.id}`)}>
               Cancel
             </ActionButton>
-          ) : (
-            <ActionButton className="bg-[#F3F4F6]">Save Draft</ActionButton>
           )}
           <button
             type="button"
@@ -1006,7 +977,7 @@ function SalesInvoiceForm({
             ) : (
               <FileText className="h-4 w-4" strokeWidth={1.75} />
             )}
-            {saving ? 'Savingâ€¦' : isEdit ? 'Update Invoice' : 'Generate Invoice'}
+            {saving ? 'Saving...' : isEdit ? 'Update Invoice' : 'Generate Invoice'}
           </button>
         </div>
       </div>
@@ -1167,11 +1138,38 @@ function Td({ children, className }: { children?: ReactNode; className?: string 
   )
 }
 
-function TotalRow({ label, value }: { label: string; value: number }) {
+function TotalCell({
+  label,
+  value,
+  emphasize,
+}: {
+  label: string
+  value: number
+  emphasize?: boolean
+}) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-ink-secondary">{label}</dt>
-      <dd className="font-medium text-ink">{formatCurrencyExact(value)}</dd>
+    <div
+      className={cn(
+        'flex min-w-[120px] flex-1 flex-col justify-center gap-0.5 px-4 py-3',
+        emphasize && 'bg-blue-50',
+      )}
+    >
+      <span
+        className={cn(
+          'text-[11px] font-medium text-ink-secondary',
+          emphasize && 'text-ink',
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          'text-[13px] font-semibold text-ink tabular-nums',
+          emphasize && 'text-[15px] font-bold text-accent',
+        )}
+      >
+        {formatCurrencyExact(value)}
+      </span>
     </div>
   )
 }

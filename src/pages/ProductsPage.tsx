@@ -245,11 +245,9 @@ export function ProductsPage() {
                 <th className="px-4 py-3">Product Code</th>
                 <th className="px-4 py-3">Category</th>
                 <th className="px-4 py-3">HSN Code</th>
-                <th className="px-4 py-3">Unit</th>
                 <th className="px-4 py-3 text-right">Purchase Rate (Rs)</th>
                 <th className="px-4 py-3 text-right">Sale Rate (Rs)</th>
                 <th className="px-4 py-3 text-right">Current Stock</th>
-                <th className="px-4 py-3 text-right">Min. Stock</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Action</th>
               </tr>
@@ -273,7 +271,6 @@ export function ProductsPage() {
                     <td className="px-4 py-3.5 font-mono text-[12px] text-ink-secondary">
                       {p.hsn_code || '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-ink-muted">{p.unit || 'Nos'}</td>
                     <td className="px-4 py-3.5 text-right text-ink-muted">
                       {formatCurrency(p.dealer_price)}
                     </td>
@@ -290,7 +287,6 @@ export function ProductsPage() {
                     >
                       {p.stock_quantity}
                     </td>
-                    <td className="px-4 py-3.5 text-right text-ink-muted">{p.minimum_stock}</td>
                     <td className="px-4 py-3.5">
                       <span
                         className={cn(
@@ -328,7 +324,7 @@ export function ProductsPage() {
               })}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-4 py-12 text-center text-sm text-ink-muted">
+                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-ink-muted">
                     {loading
                       ? 'Loading products…'
                       : error
