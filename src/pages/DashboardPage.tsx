@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { PaymentBadge } from '@/components/ui/Badge'
-import { useCompanySettings } from '@/lib/company'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { fetchInvoices, fetchProducts } from '@/lib/data'
 import { useAsync } from '@/lib/useAsync'
 import { cn, formatCurrency, formatDate, toISODate } from '@/lib/utils'
@@ -30,6 +30,9 @@ import type { Invoice, Product } from '@/types'
 const PAYMENT_DUE_DAYS = 15
 
 async function loadDashboard() {
+  if (!isSupabaseConfigured) {
+    return { invoices: [] as Invoice[], products: [] as Product[] }
+  }
   const [invoices, products] = await Promise.all([fetchInvoices(), fetchProducts()])
   return { invoices, products }
 }
@@ -74,7 +77,6 @@ function ChangeHint({
 }
 
 export function DashboardPage() {
-  const company = useCompanySettings()
   const [month, setMonth] = useState(() => monthKey(new Date()))
   const { data, loading, error } = useAsync(loadDashboard, [])
 
@@ -133,28 +135,20 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-ink">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            {company.company_name || 'Sanro Fibre Glass Industries'}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="h-9 rounded-md bg-white px-3 text-sm text-ink sanro-control outline-none"
-            aria-label="Select month"
-          />
-          <Link to="/bills/new">
-            <Button size="sm">
-              <FileText className="h-4 w-4" strokeWidth={1.75} />
-              New Bill
-            </Button>
-          </Link>
-        </div>
+      <div className="flex flex-wrap items-end justify-end gap-2">
+        <input
+          type="month"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          className="h-9 rounded-md bg-white px-3 text-sm text-ink sanro-control outline-none"
+          aria-label="Select month"
+        />
+        <Link to="/bills/new">
+          <Button size="sm">
+            <FileText className="h-4 w-4" strokeWidth={1.75} />
+            New Bill
+          </Button>
+        </Link>
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
