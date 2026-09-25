@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { parseISO } from 'date-fns'
 import { CalendarDays } from 'lucide-react'
 import { Calendar } from '@/components/ui/Calendar'
@@ -27,15 +28,66 @@ export function DatePicker({
   const [month, setMonth] = useState(() =>
     value ? parseISO(value) : new Date(),
   )
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(
+    null,
+  )
   const rootRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (value) setMonth(parseISO(value))
   }, [value])
 
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) {
+      setPanelPos(null)
+      return
+    }
+
+    function place() {
+      const btn = buttonRef.current
+      const panel = panelRef.current
+      if (!btn) return
+
+      const rect = btn.getBoundingClientRect()
+      const panelWidth = panel?.offsetWidth ?? 312
+      const panelHeight = panel?.offsetHeight ?? 340
+      const gap = 8
+      const pad = 8
+
+      let left = rect.left
+      // Prefer aligning to the trigger's right edge when near the viewport right
+      if (left + panelWidth > window.innerWidth - pad) {
+        left = rect.right - panelWidth
+      }
+      left = Math.max(pad, Math.min(left, window.innerWidth - panelWidth - pad))
+
+      let top = rect.bottom + gap
+      if (top + panelHeight > window.innerHeight - pad) {
+        top = Math.max(pad, rect.top - panelHeight - gap)
+      }
+
+      setPanelPos({ top, left })
+    }
+
+    place()
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
+  }, [open])
+
   useEffect(() => {
+    if (!open) return
+
     function onDocClick(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (rootRef.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
@@ -46,7 +98,7 @@ export function DatePicker({
       document.removeEventListener('mousedown', onDocClick)
       document.removeEventListener('keydown', onKey)
     }
-  }, [])
+  }, [open])
 
   return (
     <div ref={rootRef} className={cn('relative w-full', className)}>
@@ -57,6 +109,7 @@ export function DatePicker({
         </label>
       )}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
@@ -73,44 +126,54 @@ export function DatePicker({
       </button>
       {error && <p className="mt-1 text-xs text-danger">{error}</p>}
 
-      {open && (
-        <div className="absolute left-0 z-40 mt-2 rounded-lg bg-white sanro-panel p-4 shadow-xl shadow-black/10">
-          <Calendar
-            month={month}
-            onMonthChange={setMonth}
-            mode="single"
-            selected={value || null}
-            onSelect={(iso) => {
-              onChange(iso)
-              setOpen(false)
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[80] rounded-lg bg-white sanro-panel p-4 shadow-xl shadow-black/10"
+            style={{
+              top: panelPos?.top ?? -9999,
+              left: panelPos?.left ?? -9999,
+              visibility: panelPos ? 'visible' : 'hidden',
             }}
-          />
-          <div className="mt-3 flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(15,23,42,0.06)] pt-3">
-            <button
-              type="button"
-              className="text-xs font-medium text-[#1e3a5f] hover:underline"
-              onClick={() => {
-                const today = new Date().toISOString().slice(0, 10)
-                onChange(today)
-                setMonth(new Date())
+          >
+            <Calendar
+              month={month}
+              onMonthChange={setMonth}
+              mode="single"
+              selected={value || null}
+              onSelect={(iso) => {
+                onChange(iso)
                 setOpen(false)
               }}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              className="text-xs font-medium text-[#9CA3AF] hover:text-[#6B7280]"
-              onClick={() => {
-                onChange('')
-                setOpen(false)
-              }}
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
+            />
+            <div className="mt-3 flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(15,23,42,0.06)] pt-3">
+              <button
+                type="button"
+                className="text-xs font-medium text-[#1e3a5f] hover:underline"
+                onClick={() => {
+                  const today = new Date().toISOString().slice(0, 10)
+                  onChange(today)
+                  setMonth(new Date())
+                  setOpen(false)
+                }}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                className="text-xs font-medium text-[#9CA3AF] hover:text-[#6B7280]"
+                onClick={() => {
+                  onChange('')
+                  setOpen(false)
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
