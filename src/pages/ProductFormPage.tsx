@@ -14,13 +14,41 @@ import { cn, formatCurrencyExact } from '@/lib/utils'
 import type { Product } from '@/types'
 
 const GST_OPTIONS = [0, 5, 12, 18, 28]
-const UNITS = ['Nos', 'Set', 'Box', 'Meter', 'Sq.Ft', 'Kg', 'Pair']
 const BRANDS = ['Sanro', 'Godrej', 'Yale', 'Ebco', 'Dorma', 'Saint-Gobain', 'Local']
-const PRODUCT_TYPES = ['Normal', 'Service', 'Bundle']
-const DESC_MAX = 500
+const DEFAULT_UNIT = 'Nos'
+
+const HSN_OPTIONS = [
+  {
+    code: '39252000',
+    label: 'Fibre / FRP door (3925 / 39252000)',
+  },
+  {
+    code: '7007',
+    label: 'Toughened / tempered door glass (7007)',
+  },
+  {
+    code: '7005',
+    label: 'Float / plain sheet glass (7005)',
+  },
+  {
+    code: '7008',
+    label: 'Insulating glass / DGU (7008)',
+  },
+  {
+    code: '7009',
+    label: 'Mirrors (7009)',
+  },
+  {
+    code: '8301',
+    label: 'Door lock (8301)',
+  },
+] as const
 
 const fieldClass =
-  'h-10 w-full rounded-md bg-white px-3 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF] sanro-control'
+  'h-9 w-full rounded-md border border-[#D1D5DB] bg-white px-3 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF] shadow-none transition focus:border-accent focus:ring-2 focus:ring-accent/20'
+
+const selectClass =
+  'sanro-select !h-9 !rounded-md !border !border-solid !border-[#D1D5DB] !bg-white !text-[13px] !shadow-none hover:!bg-white focus:!border-accent focus:!shadow-[0_0_0_2px_rgba(37,99,235,0.2)]'
 
 export function ProductFormPage() {
   const { id } = useParams()
@@ -34,7 +62,7 @@ export function ProductFormPage() {
 
   if (isEdit && (loadingProduct || !existing) && !loadError) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white py-24 text-sm text-ink-muted sanro-panel">
+      <div className="flex h-[calc(100vh-2rem)] flex-col items-center justify-center gap-3 rounded-xl bg-white text-sm text-ink-muted sanro-panel">
         <Loader2 className="h-5 w-5 animate-spin" />
         Loading product…
       </div>
@@ -43,7 +71,7 @@ export function ProductFormPage() {
 
   if (isEdit && (loadError || !existing)) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-white py-24 text-sm sanro-panel">
+      <div className="flex h-[calc(100vh-2rem)] flex-col items-center justify-center gap-3 rounded-xl bg-white text-sm sanro-panel">
         <p className="text-danger">{loadError || 'This product could not be found.'}</p>
         <Link to="/products" className="font-medium text-accent hover:underline">
           Back to products
@@ -77,11 +105,9 @@ function ProductForm({
   const isEdit = !!existing
   const [name, setName] = useState(existing?.name ?? '')
   const [code, setCode] = useState(existing?.product_code ?? '')
-  const [barcode, setBarcode] = useState('')
   const [category, setCategory] = useState(existing?.category_id ?? '')
   const [brand, setBrand] = useState(existing?.brand ?? '')
   const [hsn, setHsn] = useState(existing?.hsn_code ?? '')
-  const [unit, setUnit] = useState(existing?.unit ?? 'Nos')
   const [purchaseRate, setPurchaseRate] = useState(
     existing ? String(existing.dealer_price) : '',
   )
@@ -94,13 +120,6 @@ function ProductForm({
   const [minStock, setMinStock] = useState(
     existing ? String(existing.minimum_stock) : '0',
   )
-  const [reorderLevel, setReorderLevel] = useState('0')
-  const [location, setLocation] = useState('')
-  const [supplier, setSupplier] = useState('')
-  const [rack, setRack] = useState('')
-  const [productType, setProductType] = useState('Normal')
-  const [active, setActive] = useState(true)
-  const [description, setDescription] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -124,11 +143,17 @@ function ProductForm({
     return [...set]
   }, [brand])
 
+  const hsnOptions = useMemo(() => {
+    if (hsn && !HSN_OPTIONS.some((o) => o.code === hsn)) {
+      return [...HSN_OPTIONS, { code: hsn, label: `Other (${hsn})` }]
+    }
+    return [...HSN_OPTIONS]
+  }, [hsn])
+
   const errors = {
     name: !name.trim() ? 'Enter product name' : '',
     code: !code.trim() ? 'Enter product code' : '',
     category: !category ? 'Select category' : '',
-    unit: !unit ? 'Select unit' : '',
     purchaseRate: purchase < 0 ? 'Invalid rate' : '',
     saleRate: !saleRate.trim() || sale < 0 ? 'Enter sale rate' : '',
   }
@@ -151,7 +176,7 @@ function ProductForm({
         product_code: code.trim(),
         category_id: category || null,
         hsn_code: hsn.trim() || null,
-        unit: unit || 'Nos',
+        unit: DEFAULT_UNIT,
         brand: brand.trim() || null,
         gst_rate: gstRate,
         selling_price: sale,
@@ -174,30 +199,28 @@ function ProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
+    <form
+      onSubmit={handleSubmit}
+      className="flex h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl bg-white sanro-panel"
+    >
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[#EEF0F3] px-4 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <Link
             to="/products"
-            className="rounded-md bg-white p-2 text-ink-muted sanro-control hover:bg-surface-muted hover:text-ink"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink"
             aria-label="Back to products"
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
           </Link>
-          <div>
-            <h1 className="text-xl font-semibold text-ink">
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold text-ink">
               {isEdit ? 'Edit Product' : 'Add Product'}
             </h1>
-            <p className="mt-0.5 text-sm text-ink-muted">
-              {isEdit
-                ? 'Update product details'
-                : 'Enter product details to add it to your catalog'}
-            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {saveError && (
-            <p className="mr-2 max-w-xs text-[13px] text-danger" role="alert">
+            <p className="max-w-[200px] truncate text-[12px] text-danger" role="alert" title={saveError}>
               {saveError}
             </p>
           )}
@@ -210,10 +233,9 @@ function ProductForm({
         </div>
       </div>
 
-      {/* Basic Details */}
-      <Section title="Basic Details">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Field label="Product Name" required error={submitted ? errors.name : ''}>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Product Name" required error={submitted ? errors.name : ''} className="sm:col-span-2 lg:col-span-1">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -229,21 +251,11 @@ function ProductForm({
               className={fieldClass}
             />
           </Field>
-          <Field label="Barcode (Optional)">
-            <input
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              placeholder="Enter barcode"
-              className={fieldClass}
-            />
-          </Field>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Field label="Category" required error={submitted ? errors.category : ''}>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="sanro-select !h-10 !text-[13px]"
+              className={selectClass}
             >
               <option value="">
                 {categories.length === 0 ? 'No categories yet' : 'Select category'}
@@ -255,11 +267,11 @@ function ProductForm({
               ))}
             </select>
           </Field>
-          <Field label="Brand (Optional)">
+          <Field label="Brand">
             <select
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              className="sanro-select !h-10 !text-[13px]"
+              className={selectClass}
             >
               <option value="">Select brand</option>
               {brandOptions.map((b) => (
@@ -270,223 +282,108 @@ function ProductForm({
             </select>
           </Field>
           <Field label="HSN Code">
-            <input
+            <select
               value={hsn}
-              onChange={(e) => setHsn(e.target.value.replace(/\D/g, '').slice(0, 8))}
-              placeholder="Enter HSN code"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Unit" required error={submitted ? errors.unit : ''}>
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              className="sanro-select !h-10 !text-[13px]"
+              onChange={(e) => setHsn(e.target.value)}
+              className={selectClass}
             >
-              <option value="">Select unit</option>
-              {UNITS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-      </Section>
-
-      {/* Pricing & Tax */}
-      <Section title="Pricing & Tax">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Field
-            label="Purchase Rate (Rs)"
-            required
-            error={submitted ? errors.purchaseRate : ''}
-          >
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={purchaseRate}
-              onChange={(e) => setPurchaseRate(e.target.value)}
-              placeholder="0.00"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Sale Rate (Rs)" required error={submitted ? errors.saleRate : ''}>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={saleRate}
-              onChange={(e) => setSaleRate(e.target.value)}
-              placeholder="0.00"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="MRP (Rs) (Optional)">
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={mrp}
-              onChange={(e) => setMrp(e.target.value)}
-              placeholder="0.00"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="GST %" required>
-            <select
-              value={gst}
-              onChange={(e) => setGst(e.target.value)}
-              className="sanro-select !h-10 !text-[13px]"
-            >
-              {GST_OPTIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}%
+              <option value="">Select HSN</option>
+              {hsnOptions.map((o) => (
+                <option key={o.code} value={o.code} title={o.label}>
+                  {o.label}
                 </option>
               ))}
             </select>
           </Field>
         </div>
 
-        <div className="mt-4 grid gap-3 rounded-lg bg-sky-50/80 px-4 py-3 sm:grid-cols-2 xl:grid-cols-4">
-          <SummaryStat label="Purchase Rate (Rs)" value={formatCurrencyExact(purchase)} />
-          <SummaryStat label="Sale Rate (Rs)" value={formatCurrencyExact(sale)} />
-          <SummaryStat label="GST Amount (Rs)" value={formatCurrencyExact(gstAmount)} />
-          <SummaryStat
-            label="Total Sale Price (Rs)"
-            value={formatCurrencyExact(totalSale)}
-            emphasize
-          />
-        </div>
-      </Section>
-
-      {/* Stock & Other */}
-      <Section title="Stock & Other Details">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Field label="Opening Stock" required>
-            <input
-              type="number"
-              min={0}
-              value={openingStock}
-              onChange={(e) => setOpeningStock(e.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Minimum Stock">
-            <input
-              type="number"
-              min={0}
-              value={minStock}
-              onChange={(e) => setMinStock(e.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Reorder Level">
-            <input
-              type="number"
-              min={0}
-              value={reorderLevel}
-              onChange={(e) => setReorderLevel(e.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Location (Optional)">
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Main Store, Godown"
-              className={fieldClass}
-            />
-          </Field>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Field label="Supplier (Optional)">
-            <select
-              value={supplier}
-              onChange={(e) => setSupplier(e.target.value)}
-              className="sanro-select !h-10 !text-[13px]"
+        <div className="border-t border-[#EEF0F3] pt-4">
+          <p className="mb-2.5 text-[12px] font-semibold text-ink">Pricing</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Field
+              label="Purchase Rate (Rs)"
+              required
+              error={submitted ? errors.purchaseRate : ''}
             >
-              <option value="">Select supplier</option>
-              <option value="local">Local Supplier</option>
-              <option value="factory">Factory Direct</option>
-            </select>
-          </Field>
-          <Field label="Rack / Shelf (Optional)">
-            <input
-              value={rack}
-              onChange={(e) => setRack(e.target.value)}
-              placeholder="Enter rack / shelf"
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Product Type">
-            <select
-              value={productType}
-              onChange={(e) => setProductType(e.target.value)}
-              className="sanro-select !h-10 !text-[13px]"
-            >
-              {PRODUCT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Status">
-            <div className="flex h-10 items-center gap-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={active}
-                onClick={() => setActive((v) => !v)}
-                className={cn(
-                  'relative h-6 w-11 rounded-full transition-colors',
-                  active ? 'bg-accent' : 'bg-[#D1D5DB]',
-                )}
-              >
-                <span
-                  className={cn(
-                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
-                    active ? 'left-5' : 'left-0.5',
-                  )}
-                />
-              </button>
-              <span className="text-[13px] font-medium text-ink">
-                {active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-          </Field>
-        </div>
-        <div className="mt-4">
-          <Field label="Description (Optional)">
-            <div className="relative">
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value.slice(0, DESC_MAX))}
-                placeholder="Enter product description..."
-                rows={4}
-                className="w-full resize-none rounded-md bg-white px-3 py-2.5 text-[13px] text-ink outline-none placeholder:text-[#9CA3AF] sanro-control"
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={purchaseRate}
+                onChange={(e) => setPurchaseRate(e.target.value)}
+                placeholder="0.00"
+                className={fieldClass}
               />
-              <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] text-ink-muted">
-                {description.length}/{DESC_MAX}
-              </span>
-            </div>
-          </Field>
+            </Field>
+            <Field label="Sale Rate (Rs)" required error={submitted ? errors.saleRate : ''}>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={saleRate}
+                onChange={(e) => setSaleRate(e.target.value)}
+                placeholder="0.00"
+                className={fieldClass}
+              />
+            </Field>
+            <Field label="MRP (Rs)">
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={mrp}
+                onChange={(e) => setMrp(e.target.value)}
+                placeholder="0.00"
+                className={fieldClass}
+              />
+            </Field>
+            <Field label="GST %" required>
+              <select
+                value={gst}
+                onChange={(e) => setGst(e.target.value)}
+                className={selectClass}
+              >
+                {GST_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}%
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-sky-50/80 px-3 py-2.5 lg:grid-cols-4">
+            <SummaryStat label="Purchase" value={formatCurrencyExact(purchase)} />
+            <SummaryStat label="Sale" value={formatCurrencyExact(sale)} />
+            <SummaryStat label="GST" value={formatCurrencyExact(gstAmount)} />
+            <SummaryStat label="Total" value={formatCurrencyExact(totalSale)} emphasize />
+          </div>
         </div>
-      </Section>
-    </form>
-  )
-}
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-xl bg-white sanro-panel">
-      <div className="px-5 py-4 sanro-divider">
-        <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+        <div className="border-t border-[#EEF0F3] pt-4">
+          <p className="mb-2.5 text-[12px] font-semibold text-ink">Stock</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Opening Stock" required>
+              <input
+                type="number"
+                min={0}
+                value={openingStock}
+                onChange={(e) => setOpeningStock(e.target.value)}
+                className={fieldClass}
+              />
+            </Field>
+            <Field label="Minimum Stock">
+              <input
+                type="number"
+                min={0}
+                value={minStock}
+                onChange={(e) => setMinStock(e.target.value)}
+                className={fieldClass}
+              />
+            </Field>
+          </div>
+        </div>
       </div>
-      <div className="p-5">{children}</div>
-    </div>
+    </form>
   )
 }
 
@@ -495,20 +392,22 @@ function Field({
   required,
   error,
   children,
+  className,
 }: {
   label: string
   required?: boolean
   error?: string
   children: ReactNode
+  className?: string
 }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-[12px] font-medium text-ink-secondary">
+    <div className={className}>
+      <label className="mb-1 block text-[11px] font-medium text-ink-secondary">
         {label}
         {required && <span className="text-danger"> *</span>}
       </label>
       {children}
-      {error ? <p className="mt-1 text-[11px] text-danger">{error}</p> : null}
+      {error ? <p className="mt-0.5 text-[11px] text-danger">{error}</p> : null}
     </div>
   )
 }
@@ -526,7 +425,7 @@ function SummaryStat({
     <div>
       <div
         className={cn(
-          'text-[11px] font-medium text-ink-muted',
+          'text-[10px] font-medium uppercase tracking-wide text-ink-muted',
           emphasize && 'text-accent',
         )}
       >
@@ -534,7 +433,7 @@ function SummaryStat({
       </div>
       <div
         className={cn(
-          'mt-1 text-[15px] font-semibold tabular-nums text-ink',
+          'mt-0.5 text-[13px] font-semibold tabular-nums text-ink',
           emphasize && 'text-accent',
         )}
       >

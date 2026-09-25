@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 
 const INVOICE_EDITOR_RE = /^\/(bills\/new|invoices\/new|invoices\/[^/]+\/edit)\/?$/
 const QUOTATION_EDITOR_RE = /^\/quotations\/(new|[^/]+\/edit)\/?$/
-const PRODUCTS_RE = /^\/products(\/.*)?\/?$/
+const PRODUCT_EDITOR_RE = /^\/products\/(new|[^/]+\/edit)\/?$/
+const PRODUCTS_LIST_RE = /^\/products\/?$/
 const REPORTS_RE = /^\/reports\/?$/
 
 function isInvoiceEditor(pathname: string) {
@@ -18,8 +19,12 @@ function isQuotationEditor(pathname: string) {
   return QUOTATION_EDITOR_RE.test(pathname)
 }
 
-function isProductsRoute(pathname: string) {
-  return PRODUCTS_RE.test(pathname)
+function isProductEditor(pathname: string) {
+  return PRODUCT_EDITOR_RE.test(pathname)
+}
+
+function isProductsList(pathname: string) {
+  return PRODUCTS_LIST_RE.test(pathname)
 }
 
 function isReportsRoute(pathname: string) {
@@ -30,7 +35,8 @@ function isFocusRoute(pathname: string) {
   return (
     isInvoiceEditor(pathname) ||
     isQuotationEditor(pathname) ||
-    isProductsRoute(pathname) ||
+    isProductEditor(pathname) ||
+    isProductsList(pathname) ||
     isReportsRoute(pathname)
   )
 }
@@ -39,8 +45,10 @@ function LayoutShell() {
   const { open, setOpen } = useSidebar()
   const location = useLocation()
   const previousOpenRef = useRef(open)
-  // Keep header on products list; only editors hide it
-  const hideHeader = isInvoiceEditor(location.pathname) || isQuotationEditor(location.pathname)
+  const hideHeader =
+    isInvoiceEditor(location.pathname) ||
+    isQuotationEditor(location.pathname) ||
+    isProductEditor(location.pathname)
 
   useEffect(() => {
     const focus = isFocusRoute(location.pathname)
